@@ -1,5 +1,5 @@
 const express = require('express');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID, randomBytes } = require('crypto'); // added for ID generation
 const app = express();
 const port = 3000;
 
@@ -10,57 +10,54 @@ app.use(express.json());
 // Put your implementation here
 // If necessary to add imports, please do so in the section above
 
-// In-memory array to store users
+// In-memory users store
 const users = [];
+const genId = () => (typeof randomUUID === 'function' ? randomUUID() : randomBytes(16).toString('hex'));
 
-// Create a User
+// 1) Create a User
 app.post('/users', (req, res) => {
     const { name, email } = req.body || {};
     if (!name || !email) {
         return res.status(400).json({ error: 'name and email are required' });
     }
-    const user = { id: uuidv4(), name, email };
+    const user = { id: genId(), name, email };
     users.push(user);
     return res.status(201).json(user);
 });
 
-// Retrieve a User
+// 2) Retrieve a User
 app.get('/users/:id', (req, res) => {
-    const { id } = req.params;
-    const user = users.find(u => u.id === id);
+    const user = users.find(u => u.id === req.params.id);
     if (!user) {
         return res.status(404).json({ error: 'user not found' });
     }
     return res.status(200).json(user);
 });
 
-// Update a User
+// 3) Update a User
 app.put('/users/:id', (req, res) => {
-    const { id } = req.params;
     const { name, email } = req.body || {};
     if (!name || !email) {
         return res.status(400).json({ error: 'name and email are required' });
     }
-    const index = users.findIndex(u => u.id === id);
-    if (index === -1) {
+    const idx = users.findIndex(u => u.id === req.params.id);
+    if (idx === -1) {
         return res.status(404).json({ error: 'user not found' });
     }
-    users[index] = { ...users[index], name, email };
-    return res.status(200).json(users[index]);
+    users[idx] = { ...users[idx], name, email };
+    return res.status(200).json(users[idx]);
 });
 
-// Delete a User
+// 4) Delete a User
 app.delete('/users/:id', (req, res) => {
-    const { id } = req.params;
-    const index = users.findIndex(u => u.id === id);
-    if (index === -1) {
+    const idx = users.findIndex(u => u.id === req.params.id);
+    if (idx === -1) {
         return res.status(404).json({ error: 'user not found' });
     }
-    users.splice(index, 1);
+    users.splice(idx, 1);
     return res.status(204).send();
 });
 
-// Simple Hello endpoint
 app.get('/', (req, res) => {
     res.send('Hello World!');
 });
